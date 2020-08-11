@@ -16,5 +16,14 @@ PERF_DATA="-"
 #   can also contain blanks."
 CHECK_OUTPUT="OK"
 
+# Source external variables that should not be checked into git:
+source ./external_variables.bash
+
+# Build OpenWeather URL:
+BASE_URL_1="http://api.openweathermap.org/data/2.5/weather?id="
+BASE_URL_2="&APPID="
+BASE_URL_3="&units=imperial"
+BASE_URL=${BASE_URL_1}${LOCATION_ID}${BASE_URL_2}${APP_ID}${BASE_URL_3}
+
 # Return output:
 echo "$STATUS $SERVICE_NAME $PERF_DATA $CHECK_OUTPUT"
