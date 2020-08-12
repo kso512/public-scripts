@@ -18,6 +18,10 @@ The format for the URL required is:
 
 ***<OUTPUT_UNITS>*** will be hard-coded initially until I work in per-unit output.
 
+The "external_variables.bash" file defines these variables and should be kept safe and private, away from public repositories.
+
+A temporaray JSON file is used to parse data, by default under *\dev\shm* for speed and removal upon reboot.
+
 ### References
 
 - [Local checks](http://mathias-kettner.com/checkmk_localchecks.html)
