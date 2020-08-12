@@ -9,6 +9,9 @@ EXTERNAL_VARIABLES="./external_variables.bash"
 # Temporary file to store data in:
 TMP_FILE="/dev/shm/check_openweather.json"
 
+# Hard-code units until per-unit code is developed:
+OUTPUT_UNITS="imperial"
+
 # "The status of a service is given as a number: 0 for OK, 1 for WARN,
 #    2 for CRIT and 3 for UNKNOWN."
 STATUS=3
@@ -36,12 +39,21 @@ fi
 BASE_URL_1="http://api.openweathermap.org/data/2.5/weather?id="
 BASE_URL_2="&APPID="
 BASE_URL_3="&units="
-if [ $LOCATION_ID -a $APP_ID -a $OUTPUT_UNITS ]
+if [ $LOCATION_ID -a $APP_ID ]
   then
     BASE_URL=${BASE_URL_1}${LOCATION_ID}${BASE_URL_2}${APP_ID}${BASE_URL_3}${OUTPUT_UNITS}
   else
     STATUS=3
     CHECK_OUTPUT="Missing external variable(s)!"
+fi
+
+# Gather raw JSON input:
+if [ $(which curl) ]
+  then
+    curl -s "$BASE_URL" -o "$TMP_FILE"
+  else
+    STATUS=3
+    CHECK_OUTPUT="Missing required application: curl"
 fi
 
 # Remove the temporary file if it exists and is writable:

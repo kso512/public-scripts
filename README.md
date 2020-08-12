@@ -6,6 +6,16 @@ Various scripts I've written or cobbled together
 
 A Check_MK "local" check to query the OpenWeather API and return important weather information.
 
+### Requirements
+
+This script requires the following:
+
+- curl
+- A writable folder, default to /dev/shm
+- An OpenWeather API Application ID
+- An OpenWeather Location ID
+- An 'external_variables.bash' file, defining the last two
+
 ### Notes
 
 This code does not work "out of the box" as the API I use bears rate limits which prevents sharing.  Creating an OpenWeather API account is free and can be done at the [OpenWeather Sign Up page](https://openweathermap.org/home/sign_up).
