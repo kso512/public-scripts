@@ -4,17 +4,18 @@ Various scripts I've written or cobbled together
 
 ## check_openweather
 
-A Check_MK "local" check to query the OpenWeather API and return important weather information.
+A Check_MK [local check](http://mathias-kettner.com/checkmk_localchecks.html) to query the [OpenWeather API](https://openweathermap.org/api) and return important weather information.
 
 ### Requirements
 
 This script requires the following:
 
-- curl
+- [curl](https://curl.haxx.se/)
+- [jq](https://stedolan.github.io/jq/)
 - A writable folder, default to /dev/shm
 - An OpenWeather API Application ID
 - An OpenWeather Location ID
-- An 'external_variables.bash' file, defining the last two
+- An 'external_variables.bash' file, defining the last of these two
 
 ### Notes
 
@@ -31,8 +32,3 @@ The format for the URL required is:
 The "external_variables.bash" file defines these variables and should be kept safe and private, away from public repositories.
 
 A temporaray JSON file is used to parse data, by default under *\dev\shm* for speed and removal upon reboot.
-
-### References
-
-- [Local checks](http://mathias-kettner.com/checkmk_localchecks.html)
-- [Weather API](https://openweathermap.org/api)

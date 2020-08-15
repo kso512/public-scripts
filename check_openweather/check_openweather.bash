@@ -56,14 +56,38 @@ if [ $(which curl) ]
     CHECK_OUTPUT="Missing required application: curl"
 fi
 
+# Parse the JSON into various values:
+if [$(which jq) ]
+  then
+    CONDITION=$(jq '.weather[].main' $TMP_FILE)
+    HUMIDITY=$(jq '.main.humidity' $TMP_FILE)
+    PRESSURE=$(jq '.main.pressure' $TMP_FILE)
+    TEMPERATURE=$(jq '.main.temp' $TMP_FILE)
+    WIND_SPEED=$(jq '.wind.speed' $TMP_FILE)
+    WIND_DIR=$(jq '.wind.deg' $TMP_FILE)
+  else
+    STATUS=3
+    CHECK_OUTPUT="Missing required application: jq"
+fi
+
 # Remove the temporary file if it exists and is writable:
 if [ -w $TMP_FILE ]
   then
     rm $TMP_FILE
+    STATUS=0
   else
     STATUS=3
     CHECK_OUTPUT="Unable to remove temporary file!"
 fi
+
+# Reduce the pressure value by 1000 to make it easier to graph:
+PRESSURE=$(expr $PRESSURE - 1000)
+
+# Build performance data (https://checkmk.com/cms_localchecks.html#perfdata):
+PERF_DATA="Humidity_PercentRelative=$HUMIDITY|Pressure_MillibarsFrom1000=$PRESSURE|Temperature_DegreesF=$TEMPERATURE|Windspeed_MPH=$WIND_SPEED|Winddirection_Degrees=$WIND_DIR"
+
+# Build the check output:
+CHECK_OUTPUT="OK - $CONDITION - $HUMIDITY % Relative Humidity - $PRESSURE mb from 1000 - $TEMPERATURE F - $WIND_SPEED MPH - $WIND_DIR bearing" # No need for alerts at this time.
 
 # Return output:
 echo "$STATUS $SERVICE_NAME $PERF_DATA $CHECK_OUTPUT"
