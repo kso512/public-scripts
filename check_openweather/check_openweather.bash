@@ -57,9 +57,9 @@ if [ $(which curl) ]
 fi
 
 # Parse the JSON into various values:
-if [$(which jq) ]
+if [ $(which jq) ]
   then
-    CONDITION=$(jq '.weather[].main' $TMP_FILE)
+    CONDITION=$(jq '.weather[0].main' $TMP_FILE)
     HUMIDITY=$(jq '.main.humidity' $TMP_FILE)
     PRESSURE=$(jq '.main.pressure' $TMP_FILE)
     TEMPERATURE=$(jq '.main.temp' $TMP_FILE)
@@ -82,6 +82,9 @@ fi
 
 # Reduce the pressure value by 1000 to make it easier to graph:
 PRESSURE=$(expr $PRESSURE - 1000)
+
+# Join CONDITION into one line if it comes through as two:
+CONDITION=${CONDITION//$'\r'}
 
 # Build performance data (https://checkmk.com/cms_localchecks.html#perfdata):
 PERF_DATA="Humidity_PercentRelative=$HUMIDITY|Pressure_MillibarsFrom1000=$PRESSURE|Temperature_DegreesF=$TEMPERATURE|Windspeed_MPH=$WIND_SPEED|Winddirection_Degrees=$WIND_DIR"
