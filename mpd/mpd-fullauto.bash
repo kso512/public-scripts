@@ -105,14 +105,20 @@ for LOOP in $(seq $LINES_DIFF)
         echo "Unable to pick a random number because shuf is missing!"
         exit 1
     fi
-    ### Add the randomly chosen line to the MPD playlist
+    ### Add the randomly chosen line to the MPD playlist as long as it's 
+    ###   not empty
     if [ $(which head) ]
       then
         if [ $(which tail) ]
           then
             NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
-            echo "Adding this song to the playlist:" $NEW_TRACK
-            mpc add "$NEW_TRACK"
+            if [ -n "$NEW_TRACK" ]
+              then
+                echo "Adding this song to the playlist:" $NEW_TRACK
+                mpc add "$NEW_TRACK"
+              else
+                echo "Strange; we didn't come back with a file...   Skipping!"
+            fi
           else
             echo "Unable to pick a random song because tail is missing!"
             exit 1
