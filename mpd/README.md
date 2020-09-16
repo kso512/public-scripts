@@ -10,10 +10,17 @@ The *mpd-fullauto.bash* script requires the following:
 
 - [Music Player Daemon](http://www.musicpd.org/)
 - The MPD client, [mpc](https://www.musicpd.org/clients/mpc/)
+- [GNU core-utils](https://www.gnu.org/software/coreutils/manual/coreutils.html), such as:
+  - cut
+  - expr
+  - head
+  - shuf
+  - tail
+  - wc
 
 ## Notes
 
 The important variables for operation of *mpd-fullauto.bash* are:
 
 - FILE_INCLUDE = The location of the include file
-- LENGTH_PLAYLIST = How long the playlist should be
+- LINES_IDEAL = How long the playlist should be
