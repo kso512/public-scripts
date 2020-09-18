@@ -22,7 +22,10 @@ fi
 if [ $(which sed) ]
   then
     echo "Removing current song from include file..."
-    sed -i 's~'"$CURRENT_SONG"'~~g' $FILE_INCLUDE
+    # We are using "~" instead of "/" because it's used in the
+    #   CURRENT_SONG variable, plus using single and double quotes
+    #   in series
+    sed -i '~'"$CURRENT_SONG"'~d' $FILE_INCLUDE
   else
     echo "Unable to remove a line from include file because sed is missing!"
     exit 1
