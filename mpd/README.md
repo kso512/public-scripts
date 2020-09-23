@@ -27,6 +27,9 @@ The *mpd-nope.bash* script requires the following:
 - [Music Player Daemon](http://www.musicpd.org/)
 - The MPD client, [mpc](https://www.musicpd.org/clients/mpc/)
 - [GNU sed](https://www.gnu.org/software/sed/manual/sed.html)
+- [GNU core-utils](https://www.gnu.org/software/coreutils/manual/coreutils.html), such as:
+  - cut
+  - wc
 
 ## Notes
 
