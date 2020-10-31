@@ -9,25 +9,51 @@ FILE_INCLUDE="/home/mpd/mpd-include.txt"
 ### How long the playlist should be
 LINES_IDEAL="151"
 
-## Create the include file if needed
+## Define functions
+
+### Create the include file if needed
+create_include_file () {
+  if [ $(which mpc) ]
+    then
+      echo "Creating missing include file:" $1
+      if [ $(mpc listall > $1) ]
+        then
+          echo "Missing include file created."
+        else
+          echo "Unable to create missing include file!"
+          exit 1
+      fi
+    else
+      echo "Unable to find include file and unable to make one because mpc is missing!"
+      exit 1
+  fi
+}
+
+### Count the lines in the include file
+function count_lines_in_include_file {
+  if [ $(which wc) ]
+    then
+      if [ $(which cut) ]
+        then
+          echo "Counting lines in include file:" $1
+          LINES_INCLUDE=$(wc -l $1 | cut -f1 -d" ")
+          echo "Number of lines counted:" $LINES_INCLUDE
+        else
+          echo "Unable to count lines in include file because cut is missing!"
+          exit 1
+      fi
+    else
+      echo "Unable to count lines in include file because wc is missing!"
+      exit 1
+  fi
+}
+
+## Check if the include file exists, then create it if needed
 if [ -r $FILE_INCLUDE ]
   then
     echo "Found include file:" $FILE_INCLUDE
   else
-    if [ $(which mpc) ]
-      then
-        echo "Creating missing include file:" $FILE_INCLUDE
-        if [ $(mpc listall > $FILE_INCLUDE) ]
-          then
-            echo "Missing include file created."
-          else
-            echo "Unable to create missing include file!"
-            exit 1
-        fi
-      else
-        echo "Unable to find include file and unable to make one because mpc is missing!"
-        exit 1
-    fi
+    create_include_file $FILE_INCLUDE
 fi
 
 ## Enforce consume mode so played songs are removed automatically
@@ -41,21 +67,7 @@ if [ $(which mpc) ]
 fi
 
 ## Count the lines in the include file
-if [ $(which wc) ]
-  then
-    if [ $(which cut) ]
-      then
-        echo "Counting lines in include file:" $FILE_INCLUDE
-        LINES_INCLUDE=$(wc -l $FILE_INCLUDE | cut -f1 -d" ")
-        echo "Number of lines counted:" $LINES_INCLUDE
-      else
-        echo "Unable to count lines in include file because cut is missing!"
-        exit 1
-    fi
-  else
-    echo "Unable to count lines in include file because wc is missing!"
-    exit 1
-fi
+count_lines_in_include_file $FILE_INCLUDE
 
 ## Find out how long the playlist is now
 if [ $(which mpc) ]
