@@ -80,6 +80,31 @@ function enforce_mpd_options () {
   mpc play
 }
 
+### Choose a random number between one and the count of lines in the 
+###   include file
+function choose_a_random_number () {
+  echo "Choosing a random number..."
+  LINE_ADD=$(shuf -i 1-$LINES_INCLUDE -n 1 )
+  echo "Random number chosen:" $LINE_ADD
+}
+
+### Add a random folder/album
+function add_a_random_folder () {
+  choose_a_random_number
+  NEW_ALBUM=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1 | rev | cut -d '/' -f2- | rev)
+  echo "Adding this album to the playlist:" $NEW_ALBUM
+  for NEW_TRACK in $(grep $NEW_ALBUM $FILE_INCLUDE)
+    do
+      if [ -n "$NEW_TRACK" ]
+        then
+          echo "Adding this song to the playlist:" $NEW_TRACK
+          mpc add "$NEW_TRACK"
+        else
+          echo "Strange; we didn't come back with a file...   Skipping!"
+      fi
+    done
+}
+
 ### Count the lines in the given file
 function count_lines_in_given_file {
   echo "Counting lines in given file:" $1
@@ -111,11 +136,7 @@ function perform_arithmetic {
 function loop_to_fill_difference {
   for LOOP in $(seq $LINES_DIFF)
     do
-      ### Choose a random number between one and the count of lines in the 
-      ###   include file
-      echo "Choosing a random number..."
-      LINE_ADD=$(shuf -i 1-$LINES_INCLUDE -n 1 )
-      echo "Random number chosen:" $LINE_ADD
+      choose_a_random_number
       ### Add the randomly chosen line to the MPD playlist as long as it's 
       ###   not empty
       NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
@@ -140,6 +161,9 @@ enforce_mpd_options
 
 ## Count the lines in the given file
 count_lines_in_given_file $FILE_INCLUDE
+
+## Add a random folder/album
+add_a_random_folder
 
 ## Show our goal
 echo "Number of lines needed:" $LINES_IDEAL

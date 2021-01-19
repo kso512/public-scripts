@@ -2,7 +2,7 @@
 
 *mpd-fullauto.bash* is a bash script to help manage [Music Player Daemon](http://www.musicpd.org/), also known as MPD, and keep its playlist filled with random songs.
 
-The script is designed to be called every hour from cron.
+The script is designed to be called every hour or two from cron.  It first adds a randomly selected album (folder) and then fills the rest of the playlist with randomly selected songs.
 
 *mpd-nope.bash* is a bash script to help remove unwanted songs from the include file for mpd-fullauto.bash.
 
@@ -16,6 +16,8 @@ The *mpd-fullauto.bash* script requires the following:
 
 - [Music Player Daemon](http://www.musicpd.org/)
 - The MPD client, [mpc](https://www.musicpd.org/clients/mpc/)
+- [Kernel.org util-linux](https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/), such as:
+  - rev
 - [GNU core-utils](https://www.gnu.org/software/coreutils/manual/coreutils.html), such as:
   - cut
   - expr
@@ -61,7 +63,7 @@ The important variables for operation of *mpd-nope.bash* are:
 
 No variables are needed for *mpd-nope.cgi*.
 
-## Helpful links:
+## Helpful links
 
 - [Apache - Debian Wiki](https://wiki.debian.org/Apache)
 - [CGI - Debian Wiki](https://wiki.debian.org/CGI)
