@@ -6,6 +6,8 @@
 ## Define variables
 ### The location of the include file
 FILE_INCLUDE="/home/mpd/mpd-include.txt"
+### The location of the exclude file
+FILE_EXCLUDE="/home/mpd/mpd-exclude.txt"
 
 ## Count the lines in the include file before our work
 if [ $(which wc) ]
@@ -74,3 +76,7 @@ if [ $(which wc) ]
     echo "Unable to count lines in include file because wc is missing!"
     exit 1
 fi
+
+## Add the line to the exclude file
+echo "Adding current song to exclude file..."
+echo $CURRENT_SONG >> $FILE_EXCLUDE || echo "Unable to add current song to exclude file!" && exit 1

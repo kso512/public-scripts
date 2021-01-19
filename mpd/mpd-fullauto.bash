@@ -4,139 +4,151 @@
 #   random songs.
 
 ## Define variables
+### The location of the exclude file
+FILE_EXCLUDE="/home/mpd/mpd-exclude.txt"
 ### The location of the include file
 FILE_INCLUDE="/home/mpd/mpd-include.txt"
 ### How long the playlist should be
 LINES_IDEAL="151"
+### List of bash applications used
+REQUIREMENTS="comm cut expr head mpc shuf sort tail wc"
+### Temporary file location
+TMP_FILE="/dev/shm/mpd-tmp.txt"
 
 ## Define functions
 
-### Create the include file if needed
-create_include_file () {
-  if [ $(which mpc) ]
+### Check for requirements
+function check_requirements () {
+  echo ""
+  echo "Checking for requirements..."
+  for REQUIREMENT in $REQUIREMENTS
+    do
+      which $REQUIREMENT || {
+        echo "Requirement missing:" $REQUIREMENT
+        exit 1
+      }
+    done  
+  echo "Requirements met."
+}
+
+### Check if the include file exists, then create it if needed
+function check_include_file {
+  if [ -r $FILE_INCLUDE ]
     then
-      echo "Creating missing include file:" $1
-      if [ $(mpc listall > $1) ]
-        then
-          echo "Missing include file created."
-        else
-          echo "Unable to create missing include file!"
-          exit 1
-      fi
+      echo "Found include file:" $FILE_INCLUDE
     else
-      echo "Unable to find include file and unable to make one because mpc is missing!"
-      exit 1
+      create_include_file $FILE_INCLUDE
   fi
 }
 
-### Count the lines in the include file
-function count_lines_in_include_file {
-  if [ $(which wc) ]
+### Create the include file if needed
+function create_include_file () {
+  echo ""
+  echo "Creating missing include file:" $1
+  mpc listall > $1
+  if [ -w $1 ]
     then
-      if [ $(which cut) ]
-        then
-          echo "Counting lines in include file:" $1
-          LINES_INCLUDE=$(wc -l $1 | cut -f1 -d" ")
-          echo "Number of lines counted:" $LINES_INCLUDE
-        else
-          echo "Unable to count lines in include file because cut is missing!"
-          exit 1
-      fi
+      echo "Missing include file created; now sorting..."
+      sort $1 -o "$TMP_FILE"
+      mv "$TMP_FILE" $1
     else
-      echo "Unable to count lines in include file because wc is missing!"
+      echo "Unable to create missing include file!"
       exit 1
   fi
+  # Check if the exclude file exists, and use it if so
+  if [ -r $FILE_EXCLUDE ]
+    then
+      echo "Found exclude file:" $FILE_EXCLUDE
+      echo "Sorting exclude file..."
+      sort $FILE_EXCLUDE -o "$TMP_FILE"
+      mv "$TMP_FILE" $FILE_EXCLUDE
+      echo "Exclude file sorted; now keeping lines unique to include file..."
+      comm -23 $1 $FILE_EXCLUDE > "$TMP_FILE"
+      mv "$TMP_FILE" $1
+
+    else
+      echo "No exclude file found at:" $FILE_EXCLUDE
+  fi
 }
+
+### Enforce MPD options
+function enforce_mpd_options () {
+  echo "Enforcing MPD options."
+  #### Enforce consume mode so played songs are removed automatically
+  mpc -q consume on
+  #### Make sure MPD is playing
+  mpc play
+}
+
+### Count the lines in the given file
+function count_lines_in_given_file {
+  echo "Counting lines in given file:" $1
+  LINES_INCLUDE=$(wc -l $1 | cut -f1 -d" ")
+  echo "Number of lines counted:" $LINES_INCLUDE
+}
+
+### Count the lines in the current playlist
+function count_lines_in_current_playlist {
+  echo "Counting lines in current playlist..."
+  LINES_PLAYLIST=$(mpc playlist | wc -l)
+  echo "Number of lines in playlist:" $LINES_PLAYLIST
+}
+
+### Find the difference between the two current and ideal numbers
+function perform_arithmetic {
+  echo "Performing arithmetic..."
+  LINES_DIFF=$(expr $LINES_IDEAL - $LINES_PLAYLIST)
+  if [ $LINES_DIFF -gt 0 ]
+    then
+      echo "Number of lines to add:" $LINES_DIFF
+    else
+      echo "Nothing to add; plenty of songs in the playlist!"
+      exit 0
+  fi  
+}
+
+### Loop enough times to fill that difference
+function loop_to_fill_difference {
+  for LOOP in $(seq $LINES_DIFF)
+    do
+      ### Choose a random number between one and the count of lines in the 
+      ###   include file
+      echo "Choosing a random number..."
+      LINE_ADD=$(shuf -i 1-$LINES_INCLUDE -n 1 )
+      echo "Random number chosen:" $LINE_ADD
+      ### Add the randomly chosen line to the MPD playlist as long as it's 
+      ###   not empty
+      NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
+      if [ -n "$NEW_TRACK" ]
+        then
+          echo "Adding this song to the playlist:" $NEW_TRACK
+          mpc add "$NEW_TRACK"
+        else
+          echo "Strange; we didn't come back with a file...   Skipping!"
+      fi
+    done
+}
+
+## Check for requirements
+check_requirements
 
 ## Check if the include file exists, then create it if needed
-if [ -r $FILE_INCLUDE ]
-  then
-    echo "Found include file:" $FILE_INCLUDE
-  else
-    create_include_file $FILE_INCLUDE
-fi
+check_include_file
 
-## Enforce consume mode so played songs are removed automatically
-if [ $(which mpc) ]
-  then
-    echo "Enforcing consume mode."
-    mpc -q consume on
-  else
-    echo "Unable to enforce consume mode because mpc is missing!"
-    exit 1
-fi
+## Enforce MPD options
+enforce_mpd_options
 
-## Count the lines in the include file
-count_lines_in_include_file $FILE_INCLUDE
+## Count the lines in the given file
+count_lines_in_given_file $FILE_INCLUDE
+
+## Show our goal
+echo "Number of lines needed:" $LINES_IDEAL
 
 ## Find out how long the playlist is now
-if [ $(which mpc) ]
-  then
-    if [ $(which wc) ]
-      then
-        echo "Counting lines in current playlist..."
-        LINES_PLAYLIST=$(mpc playlist | wc -l)
-        echo "Number of lines in playlist:" $LINES_PLAYLIST
-      else
-        echo "Unable to count lines in current playlist because wc is missing!"
-        exit 1
-    fi
-  else
-    echo "Unable to count lines in current playlist because mpc is missing!"
-    exit 1
-fi
+count_lines_in_current_playlist
 
 ## Find the difference between the two current and ideal numbers
-if [ $(which expr) ]
-  then
-    echo "Performing arithmetic..."
-    LINES_DIFF=$(expr $LINES_IDEAL - $LINES_PLAYLIST)
-    if [ $LINES_DIFF -gt 1 ]
-      then
-        echo "Number of lines to add:" $LINES_DIFF
-      else
-        echo "Nothing to add; plenty of songs in the playlist!"
-        exit 0
-    fi  
-  else
-    echo "Unable to perform arithmetic because expr is missing!"
-    exit 1
-fi
+perform_arithmetic
 
 ## Loop enough times to fill that difference
-for LOOP in $(seq $LINES_DIFF)
-  do
-    ### Choose a random number between one and the count of lines in the 
-    ###   include file
-    if [ $(which shuf) ]
-      then
-        echo "Choosing a random number..."
-        LINE_ADD=$(shuf -i 1-$LINES_INCLUDE -n 1 )
-        echo "Random number chosen:" $LINE_ADD
-      else
-        echo "Unable to pick a random number because shuf is missing!"
-        exit 1
-    fi
-    ### Add the randomly chosen line to the MPD playlist as long as it's 
-    ###   not empty
-    if [ $(which head) ]
-      then
-        if [ $(which tail) ]
-          then
-            NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
-            if [ -n "$NEW_TRACK" ]
-              then
-                echo "Adding this song to the playlist:" $NEW_TRACK
-                mpc add "$NEW_TRACK"
-              else
-                echo "Strange; we didn't come back with a file...   Skipping!"
-            fi
-          else
-            echo "Unable to pick a random song because tail is missing!"
-            exit 1
-        fi
-      else
-        echo "Unable to pick a random song because head is missing!"
-        exit 1
-    fi
-  done
+loop_to_fill_difference
