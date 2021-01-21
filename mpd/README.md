@@ -16,13 +16,17 @@ The *mpd-fullauto.bash* script requires the following:
 
 - [Music Player Daemon](http://www.musicpd.org/)
 - The MPD client, [mpc](https://www.musicpd.org/clients/mpc/)
+- [GNU grep](https://www.gnu.org/software/grep/)
 - [Kernel.org util-linux](https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/), such as:
   - rev
 - [GNU core-utils](https://www.gnu.org/software/coreutils/manual/coreutils.html), such as:
+  - comm
   - cut
   - expr
   - head
+  - seq
   - shuf
+  - sort
   - tail
   - wc
 
