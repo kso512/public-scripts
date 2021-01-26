@@ -14,4 +14,6 @@ echo "<p>I am user $(whoami)</p>"
 echo "<p>Running mpd-nope.bash...</p>"
 echo "<pre><code>$(/home/mpd/mpd-nope.bash)</code></pre>"
 
+echo "<p><a href=\"/cgi-bin/mpd-nope.cgi\">RELOAD</a></p>"
+
 echo "</body></html>"

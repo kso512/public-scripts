@@ -9,7 +9,7 @@ FILE_EXCLUDE="/home/mpd/mpd-exclude.txt"
 ### The location of the include file
 FILE_INCLUDE="/home/mpd/mpd-include.txt"
 ### How long the playlist should be
-LINES_IDEAL="151"
+LINES_IDEAL="100"
 ### List of bash applications used
 REQUIREMENTS="comm cut expr grep head mpc rev seq shuf sort tail wc"
 ### Temporary file location
@@ -64,6 +64,7 @@ function create_include_file () {
   #### Check if the exclude file exists, and use it if so
   if [ -r $FILE_EXCLUDE ]
     then
+      echo ""
       echo "Found exclude file:" $FILE_EXCLUDE
       echo "Sorting exclude file..."
       ##### Make sure to sort the file so we can use comm later
@@ -103,30 +104,46 @@ function choose_a_random_number () {
 function add_a_random_folder () {
   choose_a_random_number
   #### head: list all the lines in the file up to our random number
-  #### tail: from that list, keep only the last line
-  #### rev: reverse the order of the line, putting the first character last
-  #### cut: splitting by forward slashes, keep the 2nd field and beyond
-  #### rev: reverse the order of the line, putting the last character first
-  #### This finds a random line, then ignores the song part of the line,
-  ####   keeping only the folder/album portion of the line.
-  NEW_ALBUM=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1 | rev | cut -d '/' -f2- | rev)
-  echo "Adding this album to the playlist:" $NEW_ALBUM
-  #### grep: find all the lines matching the folder we just picked
-  #### head: don't add too many songs, if it's a larger folder
-  for NEW_TRACK in $(grep $NEW_ALBUM $FILE_INCLUDE | head -n $(expr $LINES_IDEAL / 2))
-    do
-      if [ -n "$NEW_TRACK" ]
-        then
-          echo "Adding this song to the playlist:" $NEW_TRACK
-          mpc add "$NEW_TRACK"
-        else
-          echo "Strange; we didn't come back with a file...   Skipping!"
-      fi
-    done
+  #### tail: from that long list, keep only the last line
+  NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
+  echo ""
+  echo "Randomly selected track:" $NEW_TRACK
+  HAS_ALBUM=$(mpc find '((filename == "'"$NEW_TRACK"'") AND (album != ""))')
+  echo "Same output indicates an album set in MPD:" $HAS_ALBUM
+  if [ -n "$HAS_ALBUM" ]
+    then      
+      #### head: list all the lines in the file up to our random number
+      #### tail: from that list, keep only the last line
+      #### rev: reverse the order of the line, putting the first character last
+      #### cut: splitting by forward slashes, keep the 2nd field and beyond
+      #### rev: reverse the order of the line, putting the last character first
+      #### This finds a random line, then ignores the song part of the line,
+      ####   keeping only the folder/album portion of the line.
+      NEW_ALBUM=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1 | rev | cut -d '/' -f2- | rev)
+      echo "Selected this folder:" $NEW_ALBUM
+      # IFS magic to set the next "for" loop to only interpret newlines
+      OIFS="$IFS"
+      IFS=$'\n'
+      #### mpc: find all the songs matching the folder we just picked
+      for NEW_TRACK in $(mpc search filename "$NEW_ALBUM")
+        do
+          if [ -n "$NEW_TRACK" ]
+            then
+              echo "Adding this song to the playlist:" $NEW_TRACK
+              mpc add "$NEW_TRACK"
+            else
+              echo "Strange; we didn't come back with a file...   Skipping!"
+          fi
+        done
+      IFS="$OIFS"
+    else
+      echo "Selected song has no album associated with it...   Skipping!"
+    fi
 }
 
 ### Count the lines in the given file
 function count_lines_in_given_file {
+  echo ""
   echo "Counting lines in given file:" $1
   #### cut: just keep the count, not the filename
   LINES_INCLUDE=$(wc -l $1 | cut -f1 -d" ")
@@ -135,6 +152,7 @@ function count_lines_in_given_file {
 
 ### Count the lines in the current playlist
 function count_lines_in_current_playlist {
+  echo ""
   echo "Counting lines in current playlist..."
   LINES_PLAYLIST=$(mpc playlist | wc -l)
   echo "Number of lines in playlist:" $LINES_PLAYLIST
@@ -142,6 +160,7 @@ function count_lines_in_current_playlist {
 
 ### Find the difference between the two current and ideal numbers
 function perform_arithmetic {
+  echo ""
   echo "Performing arithmetic..."
   LINES_DIFF=$(expr $LINES_IDEAL - $LINES_PLAYLIST)
   if [ $LINES_DIFF -gt 0 ]
@@ -165,6 +184,7 @@ function loop_to_fill_difference {
       NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
       if [ -n "$NEW_TRACK" ]
         then
+          echo ""
           echo "Adding this song to the playlist:" $NEW_TRACK
           mpc add "$NEW_TRACK"
         else
@@ -189,6 +209,7 @@ count_lines_in_given_file $FILE_INCLUDE
 add_a_random_folder
 
 ## Show our goal
+echo ""
 echo "Number of lines we are aiming for:" $LINES_IDEAL
 
 ## Find out how long the playlist is now
