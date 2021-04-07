@@ -50,16 +50,6 @@ if [ $(which sed) ]
     exit 1
 fi
 
-## Jump to the next song
-if [ $(which mpc) ]
-  then
-    echo "Jumping to next song..."
-    mpc next
-  else
-    echo "Unable to jump to next song because mpc is missing!"
-    exit 1
-fi
-
 ## Count the lines in the include file after our work
 if [ $(which wc) ]
   then
@@ -79,4 +69,21 @@ fi
 
 ## Add the line to the exclude file
 echo "Adding current song to exclude file..."
-echo $CURRENT_SONG >> $FILE_EXCLUDE || echo "Unable to add current song to exclude file!" && exit 1
+echo "$CURRENT_SONG" >> $FILE_EXCLUDE
+if grep -q "$CURRENT_SONG" $FILE_EXCLUDE
+  then
+    echo "Current song added to exclude file:" $FILE_EXCLUDE
+  else
+    echo "Unable to add current song to exclude file!"
+    exit 1
+fi
+
+## Jump to the next song
+if [ $(which mpc) ]
+  then
+    echo "Jumping to next song..."
+    mpc next
+  else
+    echo "Unable to jump to next song because mpc is missing!"
+    exit 1
+fi

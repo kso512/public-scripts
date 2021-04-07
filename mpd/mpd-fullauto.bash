@@ -64,13 +64,13 @@ function create_include_file () {
   #### Check if the exclude file exists, and use it if so
   if [ -r $FILE_EXCLUDE ]
     then
-      echo ""
       echo "Found exclude file:" $FILE_EXCLUDE
       echo "Sorting exclude file..."
       ##### Make sure to sort the file so we can use comm later
       sort $FILE_EXCLUDE -o "$TMP_FILE"
       mv "$TMP_FILE" $FILE_EXCLUDE
-      echo "Exclude file sorted."
+      chmod 0777 $FILE_EXCLUDE
+      echo "Exclude file sorted and set to allow all to write."
       echo "Keeping lines unique to include file..."
       comm -23 $1 $FILE_EXCLUDE > "$TMP_FILE"
       mv "$TMP_FILE" $1
@@ -108,20 +108,24 @@ function add_a_random_folder () {
   NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
   echo ""
   echo "Randomly selected track:" $NEW_TRACK
-  HAS_ALBUM=$(mpc find '((filename == "'"$NEW_TRACK"'") AND (album != ""))')
-  echo "Same output indicates an album set in MPD:" $HAS_ALBUM
-  if [ -n "$HAS_ALBUM" ]
-    then      
-      #### head: list all the lines in the file up to our random number
-      #### tail: from that list, keep only the last line
-      #### rev: reverse the order of the line, putting the first character last
-      #### cut: splitting by forward slashes, keep the 2nd field and beyond
-      #### rev: reverse the order of the line, putting the last character first
-      #### This finds a random line, then ignores the song part of the line,
-      ####   keeping only the folder/album portion of the line.
-      NEW_ALBUM=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1 | rev | cut -d '/' -f2- | rev)
-      echo "Selected this folder:" $NEW_ALBUM
-      # IFS magic to set the next "for" loop to only interpret newlines
+#  HAS_ALBUM=$(mpc find '((filename == "'"$NEW_TRACK"'") AND (album != ""))')
+#  echo "Same output indicates an album set in MPD:" $HAS_ALBUM
+#  if [ -n "$HAS_ALBUM" ]
+  #### head: list all the lines in the file up to our random number
+  #### tail: from that list, keep only the last line
+  #### rev: reverse the order of the line, putting the first character last
+  #### cut: splitting by forward slashes, keep the 2nd field and beyond
+  #### rev: reverse the order of the line, putting the last character first
+  #### This finds a random line, then ignores the song part of the line,
+  ####   keeping only the folder/album portion of the line.
+  NEW_ALBUM=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1 | rev | cut -d '/' -f2- | rev)
+  echo "Selected this folder:" $NEW_ALBUM
+  NEW_TRACKS=$(mpc search filename "$NEW_ALBUM" | wc -l)
+  echo "Number of tracks in the same folder:" $NEW_TRACKS
+  if [ $NEW_TRACKS -le $LINES_DIFF ]
+    then
+      echo $NEW_TRACKS "is less than or equal to" $LINES_DIFF "so we'll add it!"
+      #### IFS magic to set the next "for" loop to only interpret newlines
       OIFS="$IFS"
       IFS=$'\n'
       #### mpc: find all the songs matching the folder we just picked
@@ -137,8 +141,10 @@ function add_a_random_folder () {
         done
       IFS="$OIFS"
     else
-      echo "Selected song has no album associated with it...   Skipping!"
+#      echo "Selected song has no album associated with it...   Skipping!"
+      echo $NEW_TRACKS "is greater than than" $LINES_DIFF "so we'll skip it!"
     fi
+    echo "Adding album complete!"
 }
 
 ### Count the lines in the given file
@@ -205,12 +211,18 @@ enforce_mpd_options
 ## Count the lines in the given file
 count_lines_in_given_file $FILE_INCLUDE
 
-## Add a random folder/album
-add_a_random_folder
-
 ## Show our goal
 echo ""
 echo "Number of lines we are aiming for:" $LINES_IDEAL
+
+## Find out how long the playlist is now
+count_lines_in_current_playlist
+
+## Find the difference between the two current and ideal numbers
+perform_arithmetic
+
+## Add a random folder/album
+add_a_random_folder
 
 ## Find out how long the playlist is now
 count_lines_in_current_playlist
