@@ -34,7 +34,7 @@ function check_requirements () {
 }
 
 ### Check if the include file exists and is readable
-function check_include_file {
+function check_include_file () {
   if [ -r $FILE_INCLUDE ]
     then
       echo ""
@@ -108,16 +108,13 @@ function add_a_random_folder () {
   NEW_TRACK=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1)
   echo ""
   echo "Randomly selected track:" $NEW_TRACK
-#  HAS_ALBUM=$(mpc find '((filename == "'"$NEW_TRACK"'") AND (album != ""))')
-#  echo "Same output indicates an album set in MPD:" $HAS_ALBUM
-#  if [ -n "$HAS_ALBUM" ]
+  #### This finds a random line, then ignores the song part of the line,
+  ####   keeping only the folder/album portion of the line.
   #### head: list all the lines in the file up to our random number
   #### tail: from that list, keep only the last line
   #### rev: reverse the order of the line, putting the first character last
   #### cut: splitting by forward slashes, keep the 2nd field and beyond
   #### rev: reverse the order of the line, putting the last character first
-  #### This finds a random line, then ignores the song part of the line,
-  ####   keeping only the folder/album portion of the line.
   NEW_ALBUM=$(head -n $LINE_ADD $FILE_INCLUDE | tail -n 1 | rev | cut -d '/' -f2- | rev)
   echo "Selected this folder:" $NEW_ALBUM
   NEW_TRACKS=$(mpc search filename "$NEW_ALBUM" | wc -l)
@@ -141,14 +138,13 @@ function add_a_random_folder () {
         done
       IFS="$OIFS"
     else
-#      echo "Selected song has no album associated with it...   Skipping!"
       echo $NEW_TRACKS "is greater than than" $LINES_DIFF "so we'll skip it!"
     fi
     echo "Adding album complete!"
 }
 
 ### Count the lines in the given file
-function count_lines_in_given_file {
+function count_lines_in_given_file () {
   echo ""
   echo "Counting lines in given file:" $1
   #### cut: just keep the count, not the filename
@@ -157,7 +153,7 @@ function count_lines_in_given_file {
 }
 
 ### Count the lines in the current playlist
-function count_lines_in_current_playlist {
+function count_lines_in_current_playlist () {
   echo ""
   echo "Counting lines in current playlist..."
   LINES_PLAYLIST=$(mpc playlist | wc -l)
@@ -165,7 +161,7 @@ function count_lines_in_current_playlist {
 }
 
 ### Find the difference between the two current and ideal numbers
-function perform_arithmetic {
+function perform_arithmetic () {
   echo ""
   echo "Performing arithmetic..."
   LINES_DIFF=$(expr $LINES_IDEAL - $LINES_PLAYLIST)
@@ -179,7 +175,7 @@ function perform_arithmetic {
 }
 
 ### Loop enough times to fill that difference
-function loop_to_fill_difference {
+function loop_to_fill_difference () {
   for LOOP in $(seq $LINES_DIFF)
     do
       choose_a_random_number
