@@ -1,6 +1,10 @@
 # public-scripts
 
-Various scripts I've written or cobbled together
+Various scripts I've written or cobbled together.
+
+All improved with these tools:
+
+- [ShellCheck](https://www.shellcheck.net/)
 
 ## check_openweather
 
