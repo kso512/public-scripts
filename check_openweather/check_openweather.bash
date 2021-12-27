@@ -9,6 +9,9 @@ EXTERNAL_VARIABLES="./external_variables.bash"
 # Temporary file to store data in:
 TMP_FILE="/dev/shm/check_openweather.json"
 
+# Buffer file base name:
+BUFFER_FILE_BASE="./check_openweather"
+
 # Hard-code units until per-unit code is developed:
 OUTPUT_UNITS="imperial"
 
@@ -39,7 +42,7 @@ fi
 BASE_URL_1="http://api.openweathermap.org/data/2.5/weather?id="
 BASE_URL_2="&APPID="
 BASE_URL_3="&units="
-if [ $LOCATION_ID -a $APP_ID ]
+if [ "$LOCATION_ID" ] && [ "$APP_ID" ]
   then
     BASE_URL=${BASE_URL_1}${LOCATION_ID}${BASE_URL_2}${APP_ID}${BASE_URL_3}${OUTPUT_UNITS}
   else
@@ -48,7 +51,7 @@ if [ $LOCATION_ID -a $APP_ID ]
 fi
 
 # Gather raw JSON input:
-if [ $(which curl) ]
+if [ "$(command -v curl)" ]
   then
     curl -s "$BASE_URL" -o "$TMP_FILE"
   else
@@ -56,32 +59,60 @@ if [ $(which curl) ]
     CHECK_OUTPUT="Missing required application: curl"
 fi
 
-# Parse the JSON into various values:
-if [ $(which jq) ]
+# Parse the JSON into various buffer files:
+if [ "$(command -v jq)" ]
   then
-    CONDITION=$(jq '.weather[0].main' $TMP_FILE)
-    HUMIDITY=$(jq '.main.humidity' $TMP_FILE)
-    PRESSURE=$(jq '.main.pressure' $TMP_FILE)
-    TEMPERATURE=$(jq '.main.temp' $TMP_FILE)
-    WIND_SPEED=$(jq '.wind.speed' $TMP_FILE)
-    WIND_DIR=$(jq '.wind.deg' $TMP_FILE)
+    if jq '.weather[0].main' $TMP_FILE &> /dev/null
+      then
+        echo -n "CONDITION=" > $BUFFER_FILE_BASE.CONDITION
+        jq '.weather[0].main' $TMP_FILE &>> $BUFFER_FILE_BASE.CONDITION
+    fi
+    source $BUFFER_FILE_BASE.CONDITION
+
+    if jq '.main.humidity' $TMP_FILE &> /dev/null
+      then
+        echo -n "HUMIDITY=" > $BUFFER_FILE_BASE.HUMIDITY
+        jq '.main.humidity' $TMP_FILE &>> $BUFFER_FILE_BASE.HUMIDITY
+    fi
+    source $BUFFER_FILE_BASE.HUMIDITY
+
+    if jq '.main.pressure' $TMP_FILE &> /dev/null
+      then
+        echo -n "PRESSURE=" > $BUFFER_FILE_BASE.PRESSURE
+        jq '.main.pressure' $TMP_FILE &>> $BUFFER_FILE_BASE.PRESSURE
+    fi
+    source $BUFFER_FILE_BASE.PRESSURE
+
+    if jq '.main.temp' $TMP_FILE &> /dev/null
+      then
+        echo -n "TEMPERATURE=" > $BUFFER_FILE_BASE.TEMPERATURE
+        jq '.main.temp' $TMP_FILE &>> $BUFFER_FILE_BASE.TEMPERATURE
+    fi
+    source $BUFFER_FILE_BASE.TEMPERATURE
+
+    if jq '.wind.speed' $TMP_FILE &> /dev/null
+      then
+        echo -n "WIND_SPEED=" > $BUFFER_FILE_BASE.WIND_SPEED
+        jq '.wind.speed' $TMP_FILE &>> $BUFFER_FILE_BASE.WIND_SPEED
+    fi
+    source $BUFFER_FILE_BASE.WIND_SPEED
+
+    if jq '.wind.deg' $TMP_FILE &> /dev/null
+      then
+        echo -n "WIND_DIR=" > $BUFFER_FILE_BASE.WIND_DIR
+        jq '.wind.deg' $TMP_FILE &>> $BUFFER_FILE_BASE.WIND_DIR
+    fi
+    source $BUFFER_FILE_BASE.WIND_DIR
+
+    STATUS=0
+
   else
     STATUS=3
     CHECK_OUTPUT="Missing required application: jq"
 fi
 
-# Remove the temporary file if it exists and is writable:
-if [ -w $TMP_FILE ]
-  then
-    rm $TMP_FILE
-    STATUS=0
-  else
-    STATUS=3
-    CHECK_OUTPUT="Unable to remove temporary file!"
-fi
-
 # Reduce the pressure value by 1000 to make it easier to graph:
-PRESSURE=$(expr $PRESSURE - 1000)
+PRESSURE=$(( PRESSURE - 1000))
 
 # Join CONDITION into one line if it comes through as two:
 CONDITION=${CONDITION//$'\r'}
